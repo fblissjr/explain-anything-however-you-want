@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comic Fork - Explain with Inappropriate Cats</title>
+    <link rel="stylesheet" href="index.css">
+    <!-- Import map for dependencies -->
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+    "marked": "https://esm.sh/marked@^15.0.7",
+    "@google/generative-ai": "https://esm.sh/@google/generative-ai@^0.24.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Comic Fork - Explain Things with Lots of Tiny Cats</h1>
+        </header>
+
+        <div class="main-content">
+            <div class="examples-panel">
+                <h2>Examples</h2>
+                <div class="examples-list">
+                    <button class="example-btn">Explain how neural networks work.</button>
+                    <button class="example-btn">Explain how The Matrix works.</button>
+                    <button class="example-btn">Explain how spaghettification works.</button>
+                </div>
+            </div>
+
+            <div class="prompt-panel">
+                <h2>Your prompt</h2>
+                <textarea id="prompt-input" placeholder="Enter what you want explained by inappropriately cute cats... (Ctrl+Enter or Cmd+Enter to submit)"></textarea>
+
+                <div class="input-controls">
+                    <button id="add-image-btn" title="Optionally add an image for context (image is not sent to AI)">
+                        <span class="icon">📷</span>
+                        Add an image
+                    </button>
+                    <div id="image-preview-container" hidden>
+                        <img id="image-preview" alt="Uploaded image preview" />
+                        <button id="remove-image" class="remove-image-btn" aria-label="Remove image" title="Remove image">✕</button>
+                    </div>
+                    <input type="file" id="image-upload" accept="image/*" hidden />
+                    <button id="generate-btn" class="primary-btn">Generate Explanation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area to display the user's submitted query -->
+        <div id="user-query-container" class="user-query-display" hidden></div>
+
+        <!-- Error Message Area -->
+        <div id="error-container" class="error-display" hidden></div>
+
+        <!-- Loading Indicator (No Progress Bar) -->
+        <div id="loading-indicator" class="loading-area" hidden>
+            <div class="spinner"></div>
+            <p>Generating your cat explanation...</p>
+            <!-- Removed progress bar elements -->
+            <button id="cancel-btn" class="cancel-btn">Cancel</button>
+        </div>
+
+
+        <!-- Results Area -->
+        <div id="results-container" hidden>
+            <h2>The Cat Explanation</h2>
+            <div id="cards-container" class="cards-grid">
+                <!-- Generated cards will be appended here -->
+            </div>
+
+            <div class="download-controls">
+                <label for="grid-size">Download as grid:</label>
+                <select id="grid-size">
+                    <option value="2">2x2</option>
+                    <option value="3">3x3</option>
+                    <option value="4" selected>4x4</option>
+                    <option value="5">5x5</option>
+                </select>
+                <button id="download-grid-btn" class="secondary-btn" disabled>Download Grid</button>
+            </div>
+        </div>
+
+    </div><!-- /app-container -->
+
+    <!-- Main script -->
+    <script src="index.tsx" type="module"></script>
+
+    <!--
+    REMINDER: For process.env.API_KEY to work with Vite:
+    1. Create a file named `.env` in the root of your project.
+    2. Add the following line (NO 'VITE_' prefix):
+       API_KEY=YOUR_ACTUAL_GOOGLE_AI_API_KEY
+    3. Create/edit `vite.config.js` or `vite.config.ts` and add the `define` configuration:
+       define: { 'process.env.API_KEY': JSON.stringify(process.env.API_KEY) } // Or use loadEnv
+    4. Ensure `.env` is in `.gitignore`.
+    5. Restart your Vite dev server.
+    -->
+</body>
+</html><link rel="stylesheet" href="index.css">
+<script src="index.tsx" type="module"></script>

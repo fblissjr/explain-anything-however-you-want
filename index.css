@@ -1,0 +1,455 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Indie+Flower&display=swap');
+
+:root {
+  --bg-dark: #1c1e26;
+  --bg-darker: #15171e;
+  --bg-panel: #25272e;
+  --text-light: #e5e7eb;
+  --text-dim: #9ca3af;
+  --primary: #4f78ef;
+  --primary-hover: #6f9aff;
+  --primary-light: rgba(79, 120, 239, 0.15);
+  --danger: #f87171;
+  --danger-light: rgba(248, 113, 113, 0.1);
+  --danger-border: #ef4444;
+  --border-color: #383a42;
+  --card-bg: #25272e;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  line-height: 1.6;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 5vw, 2.2rem);
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-light);
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-light);
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 2.5fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 800px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Examples panel */
+.examples-panel {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.examples-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.example-btn {
+  background: var(--bg-darker);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.example-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Prompt panel */
+.prompt-panel {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+#prompt-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-darker);
+  color: var(--text-light);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  margin-bottom: 1rem;
+}
+#prompt-input:disabled { /* Style when disabled (e.g., API key missing) */
+    background-color: var(--bg-dark);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+#prompt-input::placeholder {
+  color: var(--text-dim);
+}
+
+#prompt-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 120, 239, 0.2);
+}
+
+.input-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+#add-image-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#add-image-btn .icon {
+    margin-right: 0.25rem;
+}
+#add-image-btn:hover {
+  background: var(--primary-light);
+}
+
+.primary-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: auto;
+}
+
+.primary-btn:hover:not(:disabled) { /* Don't change hover if disabled */
+  background: var(--primary-hover);
+}
+
+
+.primary-btn:disabled,
+.secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  /* Keep background consistent or grey out */
+  background-color: var(--text-dim);
+   border-color: transparent; /* Adjust border for primary */
+  color: var(--bg-darker);
+}
+.secondary-btn:disabled {
+    background: transparent; /* Keep secondary bg transparent when disabled */
+    border-color: var(--text-dim);
+}
+
+.secondary-btn:disabled:hover {
+   background: transparent;
+   color: var(--text-dim);
+}
+
+.secondary-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+  background: var(--primary-light);
+}
+
+/* Image preview */
+#image-preview-container {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+#image-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.remove-image-btn:hover {
+  background: rgba(200, 0, 0, 0.7);
+}
+
+/* User query Display */
+.user-query-display {
+  background: var(--primary-light);
+  color: var(--text-light);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--primary);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.user-query-display img {
+  max-width: 80px;
+  max-height: 80px;
+  margin-left: 1rem;
+  vertical-align: middle;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+/* Error container */
+.error-display {
+  background: var(--danger-light);
+  color: var(--danger);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--danger-border);
+}
+
+/* Results container */
+#results-container {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+#results-container h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  animation: fadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  border-color: var(--primary);
+}
+
+.card-image {
+  width: 100%;
+  height: 240px;
+  object-fit: contain;
+  background: white;
+  display: block;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-content {
+  padding: 1.25rem;
+  font-family: 'Indie Flower', cursive;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--text-light);
+  min-height: 100px;
+}
+.card-content p {
+  margin-bottom: 0.5em;
+}
+.card-content strong {
+    color: var(--primary);
+}
+
+/* Download controls */
+.download-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  background: var(--bg-panel);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+#grid-size {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--bg-darker);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+#grid-size:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Loading indicator Area */
+.loading-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem; /* Adjusted gap */
+  padding: 2rem;
+  margin: 2rem auto;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  max-width: 400px;
+  text-align: center;
+}
+/* Spinner styling matching original CSS if needed */
+/* Ensure spinner animation uses standard keyframes */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--primary-light); /* Lighter base border */
+  border-radius: 50%;
+  border-top-color: var(--primary); /* Colored spinning part */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Cancel Button Style */
+.cancel-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.2rem;
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background-color: var(--danger-light);
+  color: white;
+  border-color: var(--danger);
+}
+
+
+/* Fade-in Animation for Cards */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Optional staggered delay */
+.card:nth-child(2) { animation-delay: 0.05s; }
+.card:nth-child(3) { animation-delay: 0.1s; }
+.card:nth-child(4) { animation-delay: 0.15s; }
