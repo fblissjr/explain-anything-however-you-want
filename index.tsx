@@ -1,576 +1,356 @@
+// index.tsx
 /**
+ * forked from "Explain Things with Lots of Tiny Cats": https://aistudio.google.com/apps/bundled/tiny_cats
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Imports remain the same
-import { GoogleGenerativeAI as GoogleGenAI, Part } from '@google/generative-ai'; // Use full name for clarity maybe? Check actual export
-// Or just: import { GoogleGenAI, Part } from '@google/genai';
-import { marked } from 'marked';
+import {GoogleGenAI} from '@google/genai'; // Use named import as per docs/original request
+import {marked} from 'marked';
 
-// --- IMPORTANT ---
-// Using process.env.API_KEY - Requires Vite config
-const apiKey = process.env.API_KEY;
+// --- API Key Handling ---
+// IMPORTANT: Replace with your actual API key mechanism
+// Using process.env assumes a build environment like Vite, Webpack, etc.
+// Never expose your key directly in client-side code for production.
+const API_KEY = process.env.API_KEY;
 
-if (!apiKey) {
-  console.error("API key not found in process.env.API_KEY. Ensure it's configured correctly.");
+if (!API_KEY) {
+    const errorDiv = document.querySelector('#error');
+    // Display error prominently if key is missing
+    if (errorDiv) { errorDiv.innerHTML = '<strong>FATAL ERROR: API Key is missing. Please configure API_KEY environment variable.</strong>'; errorDiv.removeAttribute('hidden'); }
+    console.error("API_KEY environment variable not set.");
+    throw new Error("API_KEY missing - Cannot initialize GoogleGenAI.");
 }
-const ai = new GoogleGenAI(apiKey || ''); // Pass API key directly to constructor
+// --- END API Key Handling ---
 
-// --- Get DOM Elements ---
-// (Keep all element selections as before)
-const promptInput = document.querySelector('#prompt-input') as HTMLTextAreaElement;
-const generateBtn = document.querySelector('#generate-btn') as HTMLButtonElement;
-const addImageBtn = document.querySelector('#add-image-btn') as HTMLButtonElement;
-const imageUpload = document.querySelector('#image-upload') as HTMLInputElement;
-const imagePreviewContainer = document.querySelector('#image-preview-container') as HTMLDivElement;
-const imagePreview = document.querySelector('#image-preview') as HTMLImageElement;
-const removeImageBtn = document.querySelector('#remove-image') as HTMLButtonElement;
-const userQueryContainer = document.querySelector('#user-query-container') as HTMLDivElement;
-const errorContainer = document.querySelector('#error-container') as HTMLDivElement;
-const resultsContainer = document.querySelector('#results-container') as HTMLDivElement;
-const cardsContainer = document.querySelector('#cards-container') as HTMLDivElement;
-const loadingIndicator = document.querySelector('#loading-indicator') as HTMLDivElement;
-const downloadBtn = document.querySelector('#download-grid-btn') as HTMLButtonElement;
+
+const ai = new GoogleGenAI({apiKey: API_KEY});
+
+// --- Model/Chat Setup ---
+// Model specifically for the simple text-based example generation
+// This creates a ChatSession instance.
+const exampleGenerationChat = ai.chats.create({ // Renamed for clarity
+  model: 'gemini-2.0-flash-exp',
+  config: {
+    responseModalities: ['TEXT'],
+    temperature: 1.25,
+    topP: 0.95,
+  },
+  history: [], // Start with empty history for each generation
+});
+
+// Chat object setup exactly like the original, for the main explanation generation
+// This also creates a distinct ChatSession instance.
+const mainGenerationChat = ai.chats.create({ // Renamed for clarity
+  model: 'gemini-2.0-flash-exp',
+  config: {
+    responseModalities: ['TEXT', 'IMAGE'],
+    temperature: 1.25,
+    topP: 0.95,
+  },
+  history: [], // Start with empty history for each generation
+});
+
+// This also creates a distinct ChatSession instance.
+const mainGenerationChat2 = ai.chats.create({ // Renamed for clarity
+  model: 'gemini-2.0-flash-exp',
+  config: {
+    responseModalities: ['TEXT', 'IMAGE'],
+    temperature: 1.25,
+    topP: 0.95,
+  },
+  history: [], // Start with empty history for each generation
+});
+// --- END Model/Chat Setup ---
+// DO NOT CHANGE ANYTHING ABOVE THIS
+
+// --- DOM Elements ---
+const userInput = document.querySelector('#input') as HTMLTextAreaElement;
+const modelOutput = document.querySelector('#output') as HTMLDivElement;
+const slideshow = document.querySelector('#slideshow') as HTMLDivElement;
+const errorContainer = document.querySelector('#error') as HTMLDivElement;
+const examplesList = document.querySelector('#examples') as HTMLUListElement;
+const customizationControls = document.querySelector('.customization-controls') as HTMLFieldSetElement;
+const subjectSelect = document.querySelector('#subject-select') as HTMLSelectElement;
+const moodSelect = document.querySelector('#mood-select') as HTMLSelectElement;
+const drawingStyleSelect = document.querySelector('#drawing-style-select') as HTMLSelectElement;
+const genreSelect = document.querySelector('#genre-select') as HTMLSelectElement;
+const perspectiveSelect = document.querySelector('#perspective-select') as HTMLSelectElement;
+const settingSelect = document.querySelector('#setting-select') as HTMLSelectElement;
+const subjectCustomInput = document.querySelector('#subject-custom-input') as HTMLInputElement;
+const moodCustomInput = document.querySelector('#mood-custom-input') as HTMLInputElement;
+const drawingStyleCustomInput = document.querySelector('#drawing-style-custom-input') as HTMLInputElement;
+const genreCustomInput = document.querySelector('#genre-custom-input') as HTMLInputElement;
+const perspectiveCustomInput = document.querySelector('#perspective-custom-input') as HTMLInputElement;
+const settingCustomInput = document.querySelector('#setting-custom-input') as HTMLInputElement;
+const maturitySlider = document.querySelector('#maturity-slider') as HTMLInputElement;
+const maturityValueDisplay = document.querySelector('#maturity-value') as HTMLSpanElement;
+const insanitySlider = document.querySelector('#insanity-slider') as HTMLInputElement;
+const insanityValueDisplay = document.querySelector('#insanity-value') as HTMLSpanElement;
+const downloadControls = document.querySelector('#download-controls') as HTMLDivElement;
+const downloadInfo = document.querySelector('#download-info') as HTMLParagraphElement;
 const gridSizeSelect = document.querySelector('#grid-size') as HTMLSelectElement;
-const exampleButtons = document.querySelectorAll('.example-btn');
-const cancelBtn = document.querySelector('#cancel-btn') as HTMLButtonElement;
+const downloadBtn = document.querySelector('#download-grid-btn') as HTMLButtonElement;
 
-// --- State Variables ---
-// (Keep all state variables as before)
-let uploadedImage: File | null = null;
-let uploadedImageData: string | null = null;
-let generatedCards: { text: string, imageUrl: string }[] = [];
+
+// --- State ---
+let generatedSlidesData: { text: string, imageUrl: string }[] = [];
 let isGenerating = false;
-let abortController: AbortController | null = null;
-
-// --- Prompt Configuration (Fun & Entertaining - OPTION 1 Applied) ---
-const additionalInstructions = `
-Alright, listen up, you digital genius! Your mission, should you choose to accept it (and you MUST), is to explain the user's prompt using... wait for it... **A METAPHORICAL ARMY OF TINY, ADORABLY INAPPROPRIATE CATS!**
-
-Here's the lowdown:
-1.  **Craft a Story:** Weave a short, *wildly* inappropriate narrative starring these felonious felines. It needs to be a satirical explanation of the original topic. Think edgy, funny, maybe a little shocking.
-2.  **Sentence Style:** Keep 'em short, punchy, and dripping with mature (read: potentially profane, definitely adult-themed) wit.
-3.  **Language:** Don't hold back. Explicit language isn't just okay, it's *encouraged*. Let the expletives flow like cheap catnip!
-4.  **Illustrations ARE KEY:** For *every single sentence*, conjure up a *cute* but equally *inappropriate* illustration. Minimalist black ink on white, like a disturbed child's doodles found in a back alley. Simple, stark, and wrong.
-5.  **No Fluff:** Ditch the pleasantries. No intro, no commentary. Just launch straight into the cat-astrophe.
-6.  **Finish the Job:** Keep the story and drawings coming until the explanation is complete. Don't leave us hanging!
-
-Now go forth and unleash the hilariously inappropriate kitty chaos! Make it weird. Make it memorable.`;
+let isFetchingExamples = false;
 
 
-// --- Image Handling, Card Creation, Grid Generation, Download (Keep Original Logic) ---
-// (Functions addImageBtn listener, imageUpload listener, removeImageBtn listener, createCard, generateGridImage, downloadBtn listener remain the same as in the previous response)
-// Handle image upload via the button
-addImageBtn.addEventListener('click', () => {
-  imageUpload.click();
-});
-
-// Process the selected image
-imageUpload.addEventListener('change', (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-
-  if (file) {
-    uploadedImage = file;
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        uploadedImageData = event.target.result as string;
-        imagePreview.src = uploadedImageData;
-        imagePreviewContainer.removeAttribute('hidden');
-        addImageBtn.textContent = 'Change Image'; // Keep this UI improvement
-      }
-    };
-
-    reader.readAsDataURL(file);
-  }
-});
-
-// Remove the uploaded image
-removeImageBtn.addEventListener('click', () => {
-  uploadedImage = null;
-  uploadedImageData = null;
-  imagePreview.src = '';
-  imagePreviewContainer.setAttribute('hidden', '');
-  imageUpload.value = ''; // Reset file input
-  addImageBtn.textContent = 'Add an Image'; // Keep this UI improvement
-});
-
-// Create a card element for a text-image pair
-function createCard(text: string, imageUrl: string): HTMLElement {
-  const card = document.createElement('div');
-  card.className = 'card';
-
-  const image = document.createElement('img');
-  image.src = imageUrl;
-  image.className = 'card-image';
-  image.alt = 'Tiny cat illustration'; // Alt text improvement
-  card.appendChild(image);
-
-  const content = document.createElement('div');
-  content.className = 'card-content';
-  content.innerHTML = text; // Assumes marked parsed HTML is passed
-  card.appendChild(content);
-
-  generatedCards.push({ text, imageUrl });
-  return card;
+// --- Helper Functions ---
+async function addSlide(text: string, imageElement: HTMLImageElement) {
+    const slide = document.createElement('div'); slide.className = 'slide';
+    const clonedImage = imageElement.cloneNode(true) as HTMLImageElement;
+    const caption = document.createElement('div'); caption.innerHTML = await marked.parse(text);
+    slide.append(clonedImage); slide.append(caption); slideshow.append(slide);
+    generatedSlidesData.push({ text: text, imageUrl: imageElement.src });
 }
 
-// Function to create a downloadable grid image of the cards
-async function generateGridImage(gridSize: number): Promise<string> {
-  const cardWidth = 300;
-  const cardHeight = 400;
-  const padding = 10;
-  const cols = gridSize;
-  const rows = Math.ceil(Math.min(generatedCards.length, gridSize * gridSize) / cols);
-
-  if (rows === 0) return '';
-
-  const canvasWidth = cols * (cardWidth + padding) - padding;
-  const canvasHeight = rows * (cardHeight + padding) - padding;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-
-  ctx.fillStyle = '#25272e';
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-  const maxCards = Math.min(generatedCards.length, gridSize * gridSize);
-  const imageLoadPromises = [];
-
-  for (let i = 0; i < maxCards; i++) {
-    const row = Math.floor(i / cols);
-    const col = i % cols;
-
-    const x = col * (cardWidth + padding);
-    const y = row * (cardHeight + padding);
-
-    const promise = new Promise<void>((resolve, reject) => { // Add reject
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-         try {
-            // Draw a card background
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x, y, cardWidth, cardWidth);
-
-            // Draw the image
-            ctx.drawImage(img, x, y, cardWidth, cardWidth);
-
-            // Draw text area background
-            ctx.fillStyle = '#25272e';
-            ctx.fillRect(x, y + cardWidth, cardWidth, cardHeight - cardWidth);
-
-            // Draw text
-            ctx.fillStyle = '#e5e7eb';
-            ctx.font = '16px "Indie Flower", cursive';
-
-            // Wrap and draw the text (Original simplified logic)
-            const maxWidth = cardWidth - 20; // 10px padding each side
-            const lineHeight = 24; // From original example calculation
-
-             // Assuming generatedCards[i].text contains HTML from marked
-            const plainText = new DOMParser().parseFromString(generatedCards[i].text, 'text/html').body.textContent || '';
-
-            const words = plainText.split(' ');
-            let line = '';
-            let lineY = y + cardWidth + 25; // Initial Y position
-
-            for (let n = 0; n < words.length; n++) {
-               const testLine = line + words[n] + ' ';
-               const metrics = ctx.measureText(testLine);
-               const testWidth = metrics.width;
-
-               if (testWidth > maxWidth && n > 0) {
-                 ctx.fillText(line.trim(), x + 10, lineY); // Draw previous line
-                 line = words[n] + ' '; // Start new line
-                 lineY += lineHeight;
-                  // Basic check to prevent drawing outside allocated area
-                  if (lineY > y + cardHeight - 15) {
-                       line += '...'; // Indicate truncation if adding next line goes too far
-                       break;
-                  }
-               } else {
-                 line = testLine;
-               }
-            }
-            // Draw the last line, checking height first
-             if (lineY <= y + cardHeight - 15) {
-                ctx.fillText(line.trim(), x + 10, lineY);
-            }
-
-            resolve();
-        } catch (drawError) {
-            console.error("Error drawing card:", drawError);
-            reject(drawError); // Reject promise on error
-        }
-      };
-       img.onerror = (err) => { // Add onerror handling
-         console.error("Error loading card image:", img.src, err);
-         // Optionally draw a placeholder on error
-         ctx.fillStyle = '#555'; // Error background
-         ctx.fillRect(x, y, cardWidth, cardWidth);
-         ctx.fillStyle = '#fff';
-         ctx.font = '14px Arial';
-         ctx.textAlign = 'center';
-         ctx.fillText('Load Error', x + cardWidth / 2, y + cardWidth / 2);
-         ctx.textAlign = 'left'; // Reset alignment
-         reject(new Error(`Failed to load image ${img.src}`));
-       }
-      img.src = generatedCards[i].imageUrl;
-    });
-
-    imageLoadPromises.push(promise);
-  }
-
-   try {
-      await Promise.all(imageLoadPromises); // Wait for all drawings
-      return canvas.toDataURL('image/png');
-   } catch (error) {
-       console.error("One or more card images failed to load or draw.", error);
-       // Decide how to handle this - return placeholder? return partial? return empty?
-       // Returning potentially partial canvas for now:
-       return canvas.toDataURL('image/png'); // Or return '' to indicate failure
-   }
-}
-
-// Download the grid image
-downloadBtn.addEventListener('click', async () => {
-  if (generatedCards.length === 0 || isGenerating) return;
-
-  downloadBtn.disabled = true;
-  downloadBtn.textContent = 'Generating Grid...'; // Keep UI update
-
-  try { // Add try/catch around grid generation
-      const gridSize = parseInt(gridSizeSelect.value);
-      const dataUrl = await generateGridImage(gridSize);
-
-      if (dataUrl) { // Check if URL generation succeeded
-          const link = document.createElement('a');
-          link.href = dataUrl;
-          link.download = `tiny-cats-explanation-${gridSize}x${gridSize}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-      } else {
-          console.error("Grid image generation failed.");
-          // Optionally inform the user via errorContainer
-          errorContainer.textContent = "Failed to generate the grid image.";
-          errorContainer.removeAttribute('hidden');
-      }
-  } catch (error) {
-      console.error("Error generating or downloading grid image:", error);
-      errorContainer.textContent = "An error occurred while generating the download image.";
-      errorContainer.removeAttribute('hidden');
-  } finally {
-      downloadBtn.disabled = false; // Re-enable regardless of success/fail
-      downloadBtn.textContent = 'Download Grid';
-  }
-});
-
-// --- Error Parsing (Original Logic) ---
 function parseError(error: any): string {
-  if (typeof error === 'string') {
-    const regex = /{"error":(.*)}/gm;
-    const m = regex.exec(error);
+    if (typeof error === 'string') { if (error.includes('[GoogleGenerativeAI Error]:')) return error; try { const m = /{"error":(.*)}/gm.exec(error); if (m && m[1]) return JSON.parse(m[1]).message || 'Unknown JSON error'; } catch { /* Ignore */ } return error; } if (error instanceof Error) return error.message; if (error?.message) return String(error.message); return 'An unknown error occurred.';
+}
+
+async function generateGridImage(gridSize: number): Promise<string> {
+    if (generatedSlidesData.length === 0) return '';
+    const slidePadding = 30; const imageRenderHeight = 350; const estimatedTextHeight = 120;
+    const cardWidth = 400 - (slidePadding * 2); const cardHeight = imageRenderHeight + estimatedTextHeight + 25;
+    const padding = 20; const cols = gridSize; const rows = Math.ceil(generatedSlidesData.length / cols);
+    const canvasWidth = cols * (cardWidth + padding) - padding; const canvasHeight = rows * (cardHeight + padding) - padding;
+    const canvas = document.createElement('canvas'); canvas.width = canvasWidth; canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d'); if (!ctx) return '';
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); // White canvas background
+    const promises = generatedSlidesData.map((cardData, i) => new Promise<void>((resolve, reject) => {
+        const row = Math.floor(i / cols); const col = i % cols; const x = col * (cardWidth + padding); const y = row * (cardHeight + padding);
+        const img = new Image(); img.onload = () => { try { const aspectRatio = img.naturalWidth / img.naturalHeight; let drawWidth = imageRenderHeight * aspectRatio; let drawHeight = imageRenderHeight; if (drawWidth > cardWidth) { drawWidth = cardWidth; drawHeight = cardWidth / aspectRatio; } const imgX = x + (cardWidth - drawWidth) / 2; const imgY = y; ctx.drawImage(img, imgX, imgY, drawWidth, drawHeight); ctx.fillStyle = '#2d3748'; ctx.font = '26px "Indie Flower", cursive'; ctx.textAlign = 'center'; const maxWidth = cardWidth - 10; const text = cardData.text; const words = text.split(' '); let line = ''; const lineHeight = 32; let lineY = y + imageRenderHeight + 25 + lineHeight; for (let n = 0; n < words.length; n++) { const testLine = line + words[n] + ' '; const metrics = ctx.measureText(testLine); if ((metrics.width > maxWidth && n > 0) || (lineY > y + cardHeight - padding)) { if (lineY <= y + cardHeight - padding) ctx.fillText(line.trim(), x + cardWidth / 2, lineY); if (lineY + lineHeight <= y + cardHeight - padding) { line = words[n] + ' '; lineY += lineHeight; } else { line = ''; break; } } else { line = testLine; } } if (line && lineY <= y + cardHeight - padding) ctx.fillText(line.trim(), x + cardWidth / 2, lineY); resolve(); } catch (drawError) { reject(drawError); } };
+        img.onerror = (err) => { console.error("Error loading image for grid:", err); ctx.fillStyle = '#4a5568'; ctx.fillRect(x, y, cardWidth, imageRenderHeight); ctx.fillStyle = '#e2e8f0'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.fillText("Load Error", x + cardWidth / 2, y + imageRenderHeight / 2); resolve(); }; img.src = cardData.imageUrl; }));
+    try { await Promise.all(promises); return canvas.toDataURL('image/png'); } catch (error) { console.error("Error generating grid image:", error); errorContainer.textContent = `Grid generation error: ${parseError(error)}`; errorContainer.removeAttribute('hidden'); return ''; }
+}
+
+
+// --- Dynamic Example Fetching (Uses sendMessage WITH OBJECT) ---
+async function fetchAndDisplayExamples() {
+    console.log("Attempting to fetch examples...");
+    if (!examplesList) { console.error("Examples list element not found!"); return; }
+    if (isFetchingExamples) { console.log("Already fetching examples, skipping."); return; }
+
+    isFetchingExamples = true;
+    examplesList.innerHTML = '<li class="loading-examples">Generating creative examples...</li>';
+// *** UPDATED PROMPT FOR TOPICS ONLY ***
+    const prompt = `Generate exactly 3 distinct, interesting, and concise example topics suitable for explanation.
+Each topic should be ONLY a concept name or a 'How/What/Why' question, under 10 words.
+STRICTLY DO NOT include any explanation, metaphor, or extra descriptive text after the topic/question itself.
+Provide ONLY the 3 topics/questions, each on a new line.
+
+GOOD Examples (Format ONLY):
+How Crayons are made
+Fall of the Roman Empire
+Why AI isn't the answer to everything
+How to figure out what to wear today
+The VC Startup Playbook
+
+BAD Examples (Content to AVOID):
+Why is collaboration like building a bridge?
+What is opportunity cost? A seesaw.
+It's essential to
+How does inflation work? An overflowing bathtub.`;
+    // *** END EXAMPLE PROMPT ***
+    
+    console.log("Example generation prompt:", prompt);
+
     try {
-      if (m && m[1]) {
-        const e = m[1];
-        const err = JSON.parse(e);
-        return err.message || m[1] || error;
-      }
-      return error;
-    } catch (e) {
-      return error;
+        // Use sendMessage() on the chat session created for examples
+        console.log("Calling exampleGenerationChat.sendMessage...");
+        // exampleGenerationChat.history.length = 0; // Reset history before sending
+
+        // *** FIX: Wrap the prompt string in an object ***
+        const result = await exampleGenerationChat.sendMessage({ message: prompt });
+
+        const response = result.text;
+        const rawText = response
+        console.log("Raw response text from LLM for examples:\n---\n", rawText, "\n---");
+        const topics = rawText.split('\n').map(t => t.trim()).filter(t => t.length > 0).map(t => t.replace(/^[\d.\-\*]\s*/, '')).filter(t => t.length > 5).slice(0, 3);
+        console.log("Parsed topics:", topics);
+        examplesList.innerHTML = '';
+        if (topics.length > 0) {
+            topics.forEach(topic => { const li = document.createElement('li'); li.textContent = topic; li.addEventListener('click', async () => { if (!isGenerating) { userInput.value = topic; await generateExplanation(topic); } }); examplesList.appendChild(li); });
+            console.log("Successfully added examples to the list.");
+        } else { throw new Error(`LLM response parsing failed or returned no valid topics. Raw response: "${rawText}"`); }
+    } catch (err: any) {
+        console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); console.error("!!! Error fetching or processing examples:", err); console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        examplesList.innerHTML = `<li class="error-examples">Could not load examples: ${parseError(err)}. Try entering a topic manually.</li>`;
+    } finally {
+         console.log("Finished fetching examples attempt.");
+         isFetchingExamples = false;
     }
-  }
-  if (error instanceof Error) {
-      return error.message;
-  }
-  return error.toString();
 }
 
-// --- Loading Indicator (Original Logic) ---
-function showLoading(message: string = 'Generating your cat explanation...') {
-  const loadingMessage = loadingIndicator.querySelector('p');
-  if (loadingMessage) {
-    loadingMessage.textContent = message;
-  }
-  loadingIndicator.removeAttribute('hidden');
+
+// --- Get Control Value & Slider Mappings ---
+function getControlValue(selectElement: HTMLSelectElement | null, customInputElement: HTMLInputElement | null, defaultValue: string): string {
+    if (!selectElement) return defaultValue; const selectedValue = selectElement.value; if (selectedValue === 'custom') { return customInputElement?.value.trim() || defaultValue; } return selectedValue || defaultValue;
+}
+function getMaturityDescription(value: number): string {
+    const descriptions = ["G-Rated (0/10)", "Very Mild (1/10)", "Mild Themes (2/10)", "Mildly Edgy (3/10)", "Moderately Edgy (4/10)", "Edgy/Satirical (5/10)", "Suggestive (6/10)", "Mature Themes (7/10)", "Strongly Inappropriate (8/10)", "Very Explicit (9/10)", "Maximum NSFW (10/10)"]; return descriptions[value] || "Unknown";
+}
+function getInsanityDescription(value: number): string {
+    const descriptions = ["Perfectly Normal (0/10)", "Slightly Odd (1/10)", "Quirky (2/10)", "Eccentric (3/10)", "Absurd (4/10)", "Surreal (5/10)", "Chaotic (6/10)", "Unpredictable (7/10)", "Completely Unhinged (8/10)", "Reality Breaking (9/10)", "Pure Gibberish (10/10)"]; return descriptions[value] || "Unknown";
 }
 
-function hideLoading() {
-  loadingIndicator.setAttribute('hidden', '');
-}
 
-// --- Main Generation Function (Using generateContentStream) ---
-async function generate(message: string) {
-  if (isGenerating || !message.trim()) return;
+// --- Main Generation Logic (UPDATED for early download controls visibility) ---
+async function generateExplanation(topicToExplain: string) {
+    if (isGenerating) { console.log("Generation already in progress, skipping."); return; }
+    isGenerating = true; console.log(`Starting explanation generation for: "${topicToExplain}"`);
 
-  isGenerating = true;
-  abortController = new AbortController(); // Still create it, though direct use might vary
+    // Disable UI elements
+    userInput.disabled = true;
+    customizationControls?.setAttribute('disabled', 'true');
+    // --- Button remains disabled ---
+    if (downloadBtn) downloadBtn.disabled = true;
+    // --- Make controls VISIBLE, but keep button disabled ---
+    if (downloadControls) downloadControls.removeAttribute('hidden');
+    // --- Show info text ---
+    if (downloadInfo) {
+        downloadInfo.textContent = "Generating explanation... Download button available when finished.";
+        downloadInfo.removeAttribute('hidden');
+    }
 
-  promptInput.disabled = true;
-  generateBtn.disabled = true;
-  addImageBtn.disabled = true;
-  imageUpload.disabled = true;
-  downloadBtn.disabled = true;
+    // Clear previous results state and UI
+    mainGenerationChat.history.length = 0;
+    modelOutput.innerHTML = '';
+    slideshow.innerHTML = '';
+    generatedSlidesData = [];
+    errorContainer.innerHTML = '';
+    errorContainer.setAttribute('hidden', 'true');
+    slideshow.setAttribute('hidden', 'true');
 
-  userQueryContainer.innerHTML = '';
-  errorContainer.innerHTML = '';
-  errorContainer.setAttribute('hidden', '');
-  cardsContainer.innerHTML = '';
-  generatedCards = [];
-  resultsContainer.setAttribute('hidden', '');
+    // --- Read Customization Values ---
+    const subject = getControlValue(subjectSelect, subjectCustomInput, 'tiny creatures');
+    const mood = getControlValue(moodSelect, moodCustomInput, 'neutral');
+    const drawingStyle = getControlValue(drawingStyleSelect, drawingStyleCustomInput, 'simple line drawing');
+    const genre = getControlValue(genreSelect, genreCustomInput, 'straightforward explanation');
+    const perspective = getControlValue(perspectiveSelect, perspectiveCustomInput, 'third-person observer');
+    const setting = getControlValue(settingSelect, settingCustomInput, 'a generic void');
+    const maturityValue = maturitySlider ? parseInt(maturitySlider.value, 10) : 3;
+    const insanityValue = insanitySlider ? parseInt(insanitySlider.value, 10) : 2;
+    const maturityDescription = getMaturityDescription(maturityValue);
+    const insanityDescription = getInsanityDescription(insanityValue);
 
-  // Display User Query
-  const queryTextNode = document.createTextNode(message);
-  userQueryContainer.appendChild(queryTextNode);
-  if (uploadedImageData) {
-      const uploadedImageElement = document.createElement('img');
-      uploadedImageElement.src = uploadedImageData;
-      uploadedImageElement.alt = 'Uploaded image provided with prompt';
-      uploadedImageElement.style.maxWidth = '80px';
-      uploadedImageElement.style.maxHeight = '80px';
-      uploadedImageElement.style.marginLeft = '10px';
-      uploadedImageElement.style.verticalAlign = 'middle';
-      userQueryContainer.appendChild(uploadedImageElement);
-  }
-  userQueryContainer.removeAttribute('hidden');
+    // --- Construct Dynamic Instructions ---
+    // --- Construct Dynamic Instructions (MODIFIED FOR HUMOR/FINISH) ---
+    const dynamicInstructions = `
+Use a fun, inherently humorous story about lots of ${subject} as a metaphor to explain the topic.
+These subjects should generally be depicted as ${mood}.
+The explanation should be delivered from a ${perspective} perspective.
+The story or metaphor should unfold within a setting described as: ${setting}.
+Keep sentences extremely short, punchy, and witty.
+Generate an illustration for *every single sentence* in a ${drawingStyle} style. The visuals MUST match the mood, setting, subjects, and contribute to the overall humor.
+The overall tone should reflect a maturity level of ${maturityDescription}.
+The narrative should feel like a ${genre}.
+The explanation should have an insanity level of ${insanityDescription}.
 
-  showLoading();
+// --- HUMOR & FINISH EMPHASIS ---
+Crucially, the entire explanation and illustrations MUST be consistently humorous, clever, satirical, or amusingly absurd. Find the funny angle.
+Do NOT include any separate introduction or meta-commentary. Start the metaphorical explanation immediately.
+Ensure the entire topic is covered.
+Instead of just stopping, CONCLUDE the explanation *itself* with a strong, genuinely funny final sentence or punchline directly related to the metaphor that cleverly ties back to the core topic. Make the ending memorable and humorous. Avoid adding a separate summary section.
+Every sentence must have a corresponding image.
+// --- END HUMOR & FINISH EMPHASIS ---
+`;
+    // --- END Construct Dynamic Instructions ---
+    const messageForStream = `Topic to explain: ${topicToExplain}\n\nDetailed Instructions:\n${dynamicInstructions}`;
+    console.log("Generated dynamic instructions:", dynamicInstructions);
 
-  try {
-    // --- Get the generative model instance ---
-    // NOTE: Model name might need adjustment if 'gemini-2.0-flash-exp' is not valid here
-    // or if specific features require a different model like 'gemini-1.5-flash' or 'gemini-pro-vision' etc.
-    // Check Google AI documentation for models compatible with generateContentStream and image output.
-    // 'gemini-1.5-flash' often works well for mixed text/image generation.
-    console.log("Getting model instance: gemini-1.5-flash"); // Or try gemini-2.0-flash-exp first
-    const model = ai.getGenerativeModel({
-        model: "gemini-1.5-flash", // TRY THIS MODEL
-        generationConfig: {
-            responseMimeType: "application/json", // Request structured JSON for easier parsing
-             // Temperature, topP etc. could be set here if needed
-        },
-        // Safety settings can be added here too if needed
-    });
-    console.log("Model instance obtained.");
+    try {
+        // Display user prompt in UI
+        const userTurn = document.createElement('div');
+        userTurn.innerHTML = await marked.parse(`**Explaining:** ${topicToExplain}`);
+        userTurn.className = 'user-turn';
+        modelOutput.append(userTurn);
+        userInput.value = ''; // Clear input textarea
 
+        // --- Call mainGenerationChat.sendMessageStream ---
+        console.log("Calling mainGenerationChat.sendMessageStream...");
+        const result = await mainGenerationChat.sendMessageStream({ message: messageForStream });
+        console.log("Stream initiated for main generation.");
 
-    // --- Prepare message parts ---
-    const combinedMessage = message + '\n\n' + additionalInstructions;
-    const messageParts: Part[] = [{ text: combinedMessage }];
-    console.log("Prepared messageParts for generateContentStream:", JSON.stringify(messageParts));
-
-
-    // --- Send Request using generateContentStream ---
-    console.log("Calling generateContentStream...");
-    const result = await model.generateContentStream({
-        contents: [{ role: "user", parts: messageParts }], // Use the 'contents' structure
-    });
-    console.log("generateContentStream call succeeded, processing response stream...");
-
-
-    // Timeout is less critical now as stream starts immediately, but keep for long waits
-    const timeoutId = setTimeout(() => {
-        if (isGenerating && generatedCards.length === 0) { // Check if cards are being generated
-             showLoading('Still working... Fetching the first cat panel.');
+        // --- Process stream ---
+        let text = '';
+        let img: HTMLImageElement | null = null;
+        let firstSlideAdded = false;
+        for await (const chunk of result) {
+            if (!chunk.candidates?.[0]?.content?.parts) { console.log("Skipping chunk with unexpected structure:", chunk); continue; }
+            for (const candidate of chunk.candidates) { for (const part of candidate.content.parts ?? []) { if (part.text) { text += part.text; } else if (part.inlineData?.data) { try { const mimeType = part.inlineData.mimeType || 'image/png'; img = document.createElement('img'); img.src = `data:${mimeType};base64,${part.inlineData.data}`; } catch (e) { console.error('Image processing error:', e); img = null; } } if (text.trim() && img) { await addSlide(text.trim(), img); if (!firstSlideAdded) { slideshow.removeAttribute('hidden'); firstSlideAdded = true; } text = ''; img = null; } } }
         }
-     }, 15000);
+        console.log("Stream processing finished.");
 
+        // Handle leftovers - including potential text-only final slide
+         if (text.trim()) {
+             // Changed the console warning slightly to acknowledge the final text might be the punchline
+             console.warn("Ended with text, potentially the punchline without image:", text);
+             const finalSlide = document.createElement('div');
+            finalSlide.className = 'slide text-only-slide';
+            const caption = document.createElement('div');
+            caption.innerHTML = await marked.parse(text.trim());
+            caption.style.marginTop = 'auto'; caption.style.marginBottom = 'auto';
+            finalSlide.append(caption);
+            slideshow.append(finalSlide);
+            if (!firstSlideAdded) slideshow.removeAttribute('hidden');
+        } else if (img && !text.trim()){
+             console.warn("Ended with image, but no final text:", img.src.substring(0,50)+"...");
+        }
 
-    resultsContainer.removeAttribute('hidden'); // Show results container earlier
-    showLoading('Creating your cat explanation...');
+    } catch (e) {
+        const msg = parseError(e);
+        console.error("!!! Generation Error:", e);
+        errorContainer.innerHTML = `<strong>Error during generation:</strong> ${msg}`;
+        errorContainer.removeAttribute('hidden');
+        // --- Hide controls and info on error ---
+        if (downloadControls) downloadControls.setAttribute('hidden', '');
+        if (downloadInfo) downloadInfo.setAttribute('hidden', '');
+    } finally {
+        // Re-enable UI elements
+        userInput.disabled = false;
+        customizationControls?.removeAttribute('disabled');
+        isGenerating = false;
 
-    // --- Process Stream (Potentially different structure) ---
-    let currentText = '';
-    let currentImage = null;
-    let cardCount = 0;
-    let streamReceived = false;
-    let aggregatedResponseText = ''; // For debugging
+        // --- Update download controls visibility/state ---
+        if (generatedSlidesData.length > 0) {
+            // Slides generated: Keep controls visible, enable button, hide info
+            if (downloadControls) downloadControls.removeAttribute('hidden'); // Ensure visible
+            if (downloadBtn) downloadBtn.disabled = false; // Enable button
+            if (downloadInfo) downloadInfo.setAttribute('hidden', ''); // Hide info text
+        } else {
+            // No slides generated (or error occurred): Hide controls, ensure button disabled, hide info
+            if (downloadControls) downloadControls.setAttribute('hidden', '');
+            if (downloadBtn) downloadBtn.disabled = true; // Ensure button is disabled
+            if (downloadInfo) downloadInfo.setAttribute('hidden', '');
+        }
+        // --- End download controls update ---
 
-
-    for await (const chunk of result.stream) {
-       streamReceived = true;
-        // Log the raw chunk structure to understand it
-       // console.log("Received stream chunk:", JSON.stringify(chunk)); // Uncomment for debugging
-
-       if (!isGenerating) break; // Check cancellation flag
-
-       try {
-           // generateContentStream often directly returns objects with a 'parts' array
-           // No 'candidates' layer usually. Need to check actual chunk structure.
-           const parts = chunk.parts; // Adjust based on actual chunk structure logging
-           // Also, response might contain functionCalls or other data. We only care about parts.
-
-           if (!parts || !Array.isArray(parts)) {
-               // If chunk is text-only (sometimes happens), aggregate it
-                const chunkText = chunk.text?.(); // Safely call text() method if it exists
-                if (chunkText) {
-                    aggregatedResponseText += chunkText;
-                    console.log("Aggregated text:", aggregatedResponseText); // Log aggregated text
-                     // Handle potentially incomplete JSON/markdown before trying to process
-                     // We might need a more robust parser here that handles partial structures.
-                }
-                continue; // Skip chunks without parts array if expecting parts
-            }
-
-
-           for (const part of parts) {
-               if (part.text) {
-                   currentText += part.text;
-               } else if (part.inlineData && part.inlineData.data) {
-                   try {
-                       const imageData = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-                       currentImage = imageData;
-                   } catch (e) {
-                       console.error('Error processing image data from stream:', e);
-                       currentImage = null;
-                   }
-               }
-
-               // --- Logic to create card (needs refinement) ---
-               // This part is tricky with generateContentStream as text and image might not align perfectly
-               // in chunks. We might need to accumulate text and process when an image arrives.
-               // For simplicity, let's keep the original logic and see if it works well enough.
-               if (currentText.trim() && currentImage) {
-                   try {
-                       const parsedText = await marked.parse(currentText.trim());
-                       const card = createCard(parsedText, currentImage);
-                       cardsContainer.appendChild(card);
-                       cardCount++;
-                       showLoading(`Creating your cat explanation... ${cardCount} panels so far`);
-                       currentText = '';
-                       currentImage = null;
-                   } catch (parseOrCardError) {
-                       console.error("Error parsing markdown or creating card:", parseOrCardError);
-                       currentText = ''; // Reset even on error
-                       currentImage = null;
-                   }
-               }
-           } // end parts loop
-       } catch (chunkProcessingError) {
-           console.error("Error processing chunk content:", chunkProcessingError);
-           console.error("Problematic chunk:", JSON.stringify(chunk)); // Log the failing chunk
-       }
-    } // end stream loop
-
-     clearTimeout(timeoutId); // Clear timeout once stream finishes
-
-
-    // --- Handle any remaining text ---
-    if (currentText.trim()) {
-       console.warn("Stream ended with leftover text (generateContentStream):", currentText.trim());
-        try {
-           const parsedText = await marked.parse(currentText.trim());
-           const finalImage = currentImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmZmZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OTk5OSI+Text Only</text></svg>';
-           const card = createCard(parsedText, finalImage);
-           cardsContainer.appendChild(card);
-           cardCount++;
-         } catch (e) {
-           console.error("Error handling remaining text:", e);
-         }
+        userInput.focus();
+        console.log("Generation process finished (either success or error).");
     }
-
-    if (!streamReceived && isGenerating) {
-      throw new Error("Received no response stream from generateContentStream.");
-    }
-
-    hideLoading();
-
-  } catch (e) {
-    console.error('<<< Generation Error Caught (generateContentStream) >>>:', e);
-    hideLoading();
-    const errorMessage = parseError(e);
-     if ((e as Error).name === 'AbortError') {
-         errorContainer.textContent = 'Generation cancelled by user.';
-     } else {
-         // More detailed error reporting
-         console.error("Error Details:", JSON.stringify(e, null, 2));
-         errorContainer.textContent = `Generation Failed: ${errorMessage}. Check console for details.`;
-     }
-    errorContainer.removeAttribute('hidden');
-
-  } finally {
-    promptInput.disabled = false;
-    generateBtn.disabled = false;
-    addImageBtn.disabled = false;
-    imageUpload.disabled = false;
-    downloadBtn.disabled = generatedCards.length === 0;
-    isGenerating = false;
-    abortController = null;
-  }
-}
-
-// --- Cancel Button (Original Logic Style) ---
-// (Keep the cancel button listener as before)
-if (cancelBtn) {
-   cancelBtn.addEventListener('click', () => {
-     if (isGenerating) {
-       console.log("Cancel requested.");
-       isGenerating = false;
-       if (abortController) {
-          abortController.abort(); // Attempt to signal cancellation
-       }
-       hideLoading();
-       errorContainer.textContent = 'Generation cancelled by user.';
-       errorContainer.removeAttribute('hidden');
-       promptInput.disabled = false;
-       generateBtn.disabled = false;
-       addImageBtn.disabled = false;
-       imageUpload.disabled = false;
-       downloadBtn.disabled = generatedCards.length === 0;
-     }
-   });
-} else {
-    console.warn("Cancel button element not found in the HTML.");
 }
 
 
-// --- Event Listeners (Original Logic) ---
-// (Keep the generateBtn, promptInput, exampleButtons listeners as before)
-generateBtn.addEventListener('click', () => {
-  const message = promptInput.value.trim();
-  if (message && !isGenerating) {
-    generate(message);
-  }
-});
+// --- Event Listeners ---
+userInput.addEventListener('keydown', async (e: KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const message = userInput.value.trim(); if (message && !isGenerating) await generateExplanation(message); } });
+function setupCustomDropdownListeners() { const selectsWithCustom = document.querySelectorAll<HTMLSelectElement>('select[data-custom-target]'); selectsWithCustom.forEach(selectElement => { const targetId = selectElement.dataset.customTarget; if (!targetId) return; const customInput = document.getElementById(targetId) as HTMLInputElement | null; if (!customInput) return; selectElement.addEventListener('change', () => { if (selectElement.value === 'custom') { customInput.removeAttribute('hidden'); customInput.focus(); } else { customInput.setAttribute('hidden', ''); customInput.value = ''; } }); if (selectElement.value === 'custom') { customInput.removeAttribute('hidden'); } else { customInput.setAttribute('hidden', ''); } }); }
+function setupSliderListeners() { if (maturitySlider && maturityValueDisplay) { maturitySlider.addEventListener('input', () => { const value = parseInt(maturitySlider.value, 10); maturityValueDisplay.textContent = `Level ${value}: ${getMaturityDescription(value)}`; }); maturityValueDisplay.textContent = `Level ${maturitySlider.value}: ${getMaturityDescription(parseInt(maturitySlider.value, 10))}`; } else { console.warn("Maturity slider/display not found."); } if (insanitySlider && insanityValueDisplay) { insanitySlider.addEventListener('input', () => { const value = parseInt(insanitySlider.value, 10); insanityValueDisplay.textContent = `Level ${value}: ${getInsanityDescription(value)}`; }); insanityValueDisplay.textContent = `Level ${insanitySlider.value}: ${getInsanityDescription(parseInt(insanitySlider.value, 10))}`; } else { console.warn("Insanity slider/display not found."); } }
+if (downloadBtn && gridSizeSelect) { downloadBtn.addEventListener('click', async () => { if (generatedSlidesData.length === 0 || isGenerating) return; downloadBtn.disabled = true; const originalButtonText = downloadBtn.textContent; downloadBtn.textContent = 'Generating...'; try { const gridSize = parseInt(gridSizeSelect.value, 10); const dataUrl = await generateGridImage(gridSize); if (dataUrl) { const link = document.createElement('a'); link.href = dataUrl; const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); const subject = getControlValue(subjectSelect, subjectCustomInput, 'metaphor'); link.download = `explained_${gridSize}x${gridSize}_${timestamp}.png`; document.body.appendChild(link); link.click(); document.body.removeChild(link); } else { if (!errorContainer.textContent) { errorContainer.textContent = "Failed to generate grid image data."; errorContainer.removeAttribute('hidden'); } } } catch (err) { console.error("Download grid error:", err); errorContainer.textContent = `Download error: ${parseError(err)}`; errorContainer.removeAttribute('hidden'); } finally { downloadBtn.textContent = originalButtonText; if (generatedSlidesData.length > 0) downloadBtn.disabled = false; } }); } else { console.warn("Download button or grid size select not found in the DOM."); }
 
-promptInput.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    const message = promptInput.value.trim();
-    if (message && !isGenerating) {
-      generate(message);
-    }
-  }
-});
-
-exampleButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    const exampleText = button.textContent?.trim() || '';
-    if (exampleText && !isGenerating) {
-      promptInput.value = exampleText;
-      removeImageBtn.click();
-      generate(exampleText);
-    }
-  });
-});
-
-
-// --- Initial Setup ---
-// (Keep initial setup logic as before)
-downloadBtn.disabled = true;
-if (!apiKey) {
-    generateBtn.disabled = true;
-    promptInput.disabled = true;
-    promptInput.placeholder = "API Key not configured. Please check setup.";
-     errorContainer.textContent = "API Key missing. Please configure process.env.API_KEY for your environment.";
-     errorContainer.removeAttribute('hidden');
+// --- Initial Page Load ---
+function initializeApp() {
+    console.log("Initializing app...");
+    if(downloadControls) downloadControls.setAttribute('hidden', '');
+    if(downloadInfo) downloadInfo.setAttribute('hidden', '');
+    if(downloadBtn) downloadBtn.disabled = true;
+    setupCustomDropdownListeners();
+    setupSliderListeners();
+    fetchAndDisplayExamples(); // Fetch examples *after* setting up other listeners
+    console.log("App initialization complete.");
 }
+document.addEventListener('DOMContentLoaded', initializeApp);

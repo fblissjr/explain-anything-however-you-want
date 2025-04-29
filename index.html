@@ -1,105 +1,282 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Comic Fork - Explain with Inappropriate Cats</title>
-    <link rel="stylesheet" href="index.css">
-    <!-- Import map for dependencies -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explain Like I'm 5... with Metaphors</title>
+    <!-- Import Map for ES Modules -->
     <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
-    "marked": "https://esm.sh/marked@^15.0.7",
-    "@google/generative-ai": "https://esm.sh/@google/generative-ai@^0.24.0"
-  }
-}
-</script>
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+          "marked": "https://esm.sh/marked@^15.0.7"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="style.css"> <!-- Link CSS -->
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <h1>Comic Fork - Explain Things with Lots of Tiny Cats</h1>
-        </header>
 
-        <div class="main-content">
-            <div class="examples-panel">
-                <h2>Examples</h2>
-                <div class="examples-list">
-                    <button class="example-btn">Explain how neural networks work.</button>
-                    <button class="example-btn">Explain how The Matrix works.</button>
-                    <button class="example-btn">Explain how spaghettification works.</button>
-                </div>
-            </div>
+<div class="container">
+  <h1>Explain Things However You Want</h1>
+  <p>Example topics (click to explain):</p>
+  <ul id="examples">
+      <!-- Examples will be loaded here dynamically -->
+      <li class="loading-examples">Loading examples...</li> <!-- Placeholder -->
+  </ul>
 
-            <div class="prompt-panel">
-                <h2>Your prompt</h2>
-                <textarea id="prompt-input" placeholder="Enter what you want explained by inappropriately cute cats... (Ctrl+Enter or Cmd+Enter to submit)"></textarea>
+  <p>Enter your own topic to explain:</p>
+    <textarea id="input" placeholder="What do you want explained? (e.g., How to Buy a House, Why Iceberg is better than Delta Lake / Spark, What caused the fall of the Roman Empire... then press Enter)"></textarea>
 
-                <div class="input-controls">
-                    <button id="add-image-btn" title="Optionally add an image for context (image is not sent to AI)">
-                        <span class="icon">📷</span>
-                        Add an image
-                    </button>
-                    <div id="image-preview-container" hidden>
-                        <img id="image-preview" alt="Uploaded image preview" />
-                        <button id="remove-image" class="remove-image-btn" aria-label="Remove image" title="Remove image">✕</button>
-                    </div>
-                    <input type="file" id="image-upload" accept="image/*" hidden />
-                    <button id="generate-btn" class="primary-btn">Generate Explanation</button>
-                </div>
-            </div>
-        </div>
+  <!-- Customization Section -->
+  <fieldset class="customization-controls">
+    <legend>Customize the Metaphor (Optional)</legend>
 
-        <!-- Area to display the user's submitted query -->
-        <div id="user-query-container" class="user-query-display" hidden></div>
+    <!-- Metaphor Subject (MASSIVELY EXPANDED OPTIONS) -->
+    <div class="control-group">
+        <label for="subject-select">Metaphor Subject:</label>
+        <select id="subject-select" data-custom-target="subject-custom-input">
+            <option value="tiny cats" selected>Tiny Cats</option>
+            <option value="overworked hamsters running on wheels">Overworked Hamsters</option>
+            <option value="slightly malevolent squirrels hoarding nuts">Malevolent Squirrels</option>
+            <option value="confused pigeons navigating a city">Confused Pigeons</option>
+            <option value="philosophical sloths hanging upside down">Philosophical Sloths</option>
+            <option value="bureaucratic badgers filing paperwork">Bureaucratic Badgers</option>
+            <option value="sentient garden gnomes guarding lawns">Sentient Garden Gnomes</option>
+            <option value="existentially angsty robots questioning existence">Angsty Robots</option>
+            <option value="miniature wizards casting minor spells">Miniature Wizards</option>
+            <option value="industrious beavers building dams">Industrious Beavers</option>
+            <option value="dancing Capybaras in hot springs">Dancing Capybaras</option>
+            <option value="a swarm of easily distracted bees">Distracted Bees</option>
+            <option value="neurotic llamas wearing tiny hats">Neurotic Llamas</option>
+            <option value="disgruntled penguins waiting in line">Disgruntled Penguins</option>
+            <option value="singing axolotls in an aquarium">Singing Axolotls</option>
+            <option value="secret agent chameleons blending in">Secret Agent Chameleons</option>
+            <option value="talking mushrooms offering advice">Talking Mushrooms</option>
+            <option value="clockwork automatons performing tasks">Clockwork Automatons</option>
+            <option value="gargoyles observing from rooftops">Observing Gargoyles</option>
+            <option value="tiny dust bunnies plotting escape">Dust Bunnies</option>
+            <option value="intelligent floating teacups">Floating Teacups</option>
+            <option value="shy, interdimensional blobs">Shy Blobs</option>
+            <option value="anthropomorphic slices of pizza">Pizza Slices</option>
+            <option value="grumpy garden vegetables">Grumpy Vegetables</option>
+            <option value="living, sarcastic socks">Sarcastic Socks</option>
+            <option value="origami creatures folding themselves">Origami Creatures</option>
+            <option value="ghosts politely haunting a house">Polite Ghosts</option>
+            <option value="miniature kaiju monsters causing minor havoc">Miniature Kaiju</option>
+            <option value="space-faring tardigrades exploring planets">Space Tardigrades</option>
+            <option value="very opinionated house plants">Opinionated House Plants</option>
+            <option value="lost puzzle pieces searching for connection">Lost Puzzle Pieces</option>
+            <option value="rogue punctuation marks causing chaos">Rogue Punctuation</option>
+            <option value="clouds shaped like everyday objects">Shapeshifting Clouds</option>
+            <option value="literal interpretations of common idioms">Literal Idioms</option>
+            <option value="self-aware computer error messages">Error Messages</option>
+            <option value="conspiracy theorist pigeons wearing tinfoil hats">Conspiracy Pigeons</option>
+            <option value="tiny vikings rowing across a puddle">Tiny Vikings</option>
+            <option value="opera singing spaghetti monsters">Opera Spaghetti Monsters</option>
+            <option value="custom">Other (Specify Below)</option>
+        </select>
+        <input type="text" id="subject-custom-input" class="custom-input" placeholder="Enter custom subject..." hidden>
+    </div>
 
-        <!-- Error Message Area -->
-        <div id="error-container" class="error-display" hidden></div>
+    <!-- Subject's Mood (EXPANDED OPTIONS) -->
+    <div class="control-group">
+        <label for="mood-select">Subject's Mood:</label>
+        <select id="mood-select" data-custom-target="mood-custom-input">
+            <option value="adorably cute and innocent" selected>Cute & Innocent</option>
+            <option value="perpetually grumpy and complaining">Grumpy & Complaining</option>
+            <option value="absurdly incompetent but trying their best">Incompetent (But Trying)</option>
+            <option value="slightly sinister and plotting">Slightly Sinister</option>
+            <option value="manically enthusiastic and hyperactive">Manically Enthusiastic</option>
+            <option value="utterly bewildered and lost">Utterly Bewildered</option>
+            <option value="melodramatic and prone to fainting">Melodramatic</option>
+            <option value="passive-aggressive with veiled insults">Passive-Aggressive</option>
+            <option value="surprisingly competent and efficient">Surprisingly Competent</option>
+            <option value="lazy and constantly napping">Lazy & Sleepy</option>
+            <option value="panicked and perpetually stressed">Panicked & Stressed</option>
+            <option value="sarcastic and unimpressed">Sarcastic & Unimpressed</option>
+            <option value="heroic and determined (perhaps overly so)">Heroic & Determined</option>
+            <option value="mischievous and playful">Mischievous & Playful</option>
+            <option value="deeply philosophical and contemplative">Philosophical</option>
+            <option value="extremely smug and self-satisfied">Smug & Self-Satisfied</option>
+            <option value="overly cautious and anxious">Cautious & Anxious</option>
+            <option value="rebellious and anti-establishment">Rebellious</option>
+            <option value="completely serene and zen-like">Serene & Zen</option>
+            <option value="gossipy and eager for drama">Gossipy</option>
+            <option value="bored and lethargic">Bored & Lethargic</option>
+            <option value="clumsy and accident-prone">Clumsy</option>
+            <option value="suspicious and paranoid">Suspicious & Paranoid</option>
+            <option value="obnoxiously cheerful">Obnoxiously Cheerful</option>
+            <option value="stoic and unreadable">Stoic & Unreadable</option>
+            <option value="vain and constantly preening">Vain & Preening</option>
+            <option value="always hungry and thinking about food">Always Hungry</option>
+            <option value="workaholic and obsessive">Workaholic</option>
+            <option value="flirtatious and charming (badly)">Flirtatious (Badly)</option>
+            <option value="in a state of constant existential dread">Existential Dread</option>
+            <option value="custom">Other (Specify Below)</option>
+        </select>
+        <input type="text" id="mood-custom-input" class="custom-input" placeholder="Enter custom mood..." hidden>
+    </div>
 
-        <!-- Loading Indicator (No Progress Bar) -->
-        <div id="loading-indicator" class="loading-area" hidden>
-            <div class="spinner"></div>
-            <p>Generating your cat explanation...</p>
-            <!-- Removed progress bar elements -->
-            <button id="cancel-btn" class="cancel-btn">Cancel</button>
-        </div>
+    <!-- Drawing Style (UPDATED OPTIONS) -->
+    <div class="control-group">
+        <label for="drawing-style-select">Drawing Style:</label>
+        <select id="drawing-style-select" data-custom-target="drawing-style-custom-input">
+            <option value="minimalist black ink line drawing on white background" selected>Minimalist Ink Line</option>
+            <option value="child's messy crayon doodle on paper">Child's Crayon Doodle</option>
+            <option value="detailed technical blueprint sketch with notes">Technical Blueprint</option>
+            <option value="rough charcoal sketch on textured paper">Rough Charcoal Sketch</option>
+            <option value="traditional Japanese woodblock print (Ukiyo-e style)">Woodblock Print</option>
+            <option value="pixel art (16-bit retro game style)">Pixel Art (16-bit)</option>
+            <option value="clean flat vector art illustration">Flat Vector Art</option>
+            <option value="soft, blended watercolor painting style">Watercolor Painting</option>
+            <option value="vibrant stained glass window design">Stained Glass Window</option>
+            <option value="classic American comic book art (panel layout implied)">Comic Book Art (Classic)</option>
+            <option value="simple manga character style (black and white)">Simple Manga Style</option>
+            <option value="geometric abstract art style">Geometric Abstraction</option>
+            <option value="scientific illustration (like a biology textbook)">Scientific Illustration</option>
+            <option value="cave painting style (simple figures, earth tones)">Cave Painting</option>
+            <option value="Art Nouveau poster illustration style">Art Nouveau Poster</option>
+            <option value="embroidery or cross-stitch pattern style">Embroidery/Cross-Stitch</option>
+            <option value="paper cut-out art style (layered look)">Paper Cut-out Art</option>
+            <option value="airbrushed art (80s retro style)">Airbrushed Art (80s)</option>
+            <option value="illuminated manuscript page style (ornate borders)">Illuminated Manuscript</option>
+            <option value="etching or engraving print style">Etching/Engraving Style</option>
+            <option value="custom">Other (Specify Below)</option>
+        </select>
+        <input type="text" id="drawing-style-custom-input" class="custom-input" placeholder="Enter custom drawing style..." hidden>
+    </div>
+
+    <!-- Content Genre (UPDATED OPTIONS) -->
+     <div class="control-group">
+        <label for="genre-select">Content Genre:</label>
+        <select id="genre-select" data-custom-target="genre-custom-input">
+            <option value="simple metaphorical story" selected>Simple Metaphor</option>
+            <option value="biting satire">Satire</option>
+            <option value="political commentary parody">Political Parody</option>
+            <option value="80s family sitcom parody (with laugh track cues)">80s Sitcom Parody</option>
+            <option value="noir detective story parody (hardboiled voiceover)">Noir Parody</option>
+            <option value="dramatic thriller parody (suspenseful music cues)">Thriller Parody</option>
+            <option value="nature documentary voiceover style (like David Attenborough)">Nature Documentary</option>
+            <option value="corporate training video style (overly chipper)">Corporate Training</option>
+            <option value="epic fantasy quest narrative (with grand pronouncements)">Fantasy Quest</option>
+            <option value="spy movie briefing style (very serious tone)">Spy Briefing</option>
+            <option value="cheesy daytime soap opera melodrama">Soap Opera Melodrama</option>
+            <option value="children's educational program (like Sesame Street)">Children's Ed Program</option>
+            <option value="monster movie setup (building dread)">Monster Movie Setup</option>
+            <option value="uplifting sports movie montage sequence">Sports Movie Montage</option>
+            <option value="existential dread cosmic horror narrative">Cosmic Horror</option>
+            <option value="instructional cooking show segment">Cooking Show Segment</option>
+            <option value="historical period drama (slightly inaccurate)">Historical Drama</option>
+            <option value="reality TV show confessional style">Reality TV Confessional</option>
+            <option value="over-the-top Broadway musical number">Broadway Musical</option>
+            <option value="gritty space western showdown">Space Western</option>
+            <option value="self-help guru motivational speech">Self-Help Guru</option>
+            <option value="classic fairy tale narration ('Once upon a time...')">Fairy Tale</option>
+            <option value="custom">Other (Specify Below)</option>
+        </select>
+        <input type="text" id="genre-custom-input" class="custom-input" placeholder="Enter custom genre..." hidden>
+    </div>
+
+    <!-- Narrative Perspective (UPDATED OPTIONS) -->
+     <div class="control-group">
+        <label for="perspective-select">Narrative Perspective:</label>
+        <select id="perspective-select" data-custom-target="perspective-custom-input">
+            <option value="neutral third-person observer" selected>Neutral Third-Person</option>
+            <option value="first-person (one of the metaphor subjects)">First-Person (Subject)</option>
+            <option value="first-person (a slightly confused outside observer)">First-Person (Confused Outsider)</option>
+            <option value="second-person ('You are participating in...')">Second-Person ('You')</option>
+            <option value="detached, slightly judgmental omniscient narrator">Judgmental Omniscient Narrator</option>
+            <option value="enthusiastic, excitable narrator">Enthusiastic Narrator</option>
+            <option value="unreliable, possibly forgetful narrator">Unreliable/Forgetful Narrator</option>
+            <option value="collective first-person ('We the subjects...')">Collective 'We'</option>
+            <option value="like dialogue from a play script">Dialogue Only (Play Script)</option>
+            <option value="like entries in a scientific log book">Scientific Log Book</option>
+            <option value="stream of consciousness from one subject">Stream of Consciousness</option>
+            <option value="custom">Other (Specify Below)</option>
+        </select>
+        <input type="text" id="perspective-custom-input" class="custom-input" placeholder="Enter custom perspective..." hidden>
+    </div>
+
+    <!-- Metaphor Setting (UPDATED OPTIONS) -->
+     <div class="control-group">
+        <label for="setting-select">Metaphor Setting:</label>
+        <select id="setting-select" data-custom-target="setting-custom-input">
+            <option value="a busy family kitchen during breakfast" selected>Busy Family Kitchen</option>
+            <option value="a crowded supermarket aisle before a holiday">Crowded Supermarket Aisle</option>
+            <option value="a public library reading room (mostly quiet)">Public Library Reading Room</option>
+            <option value="a typical office cubicle farm">Office Cubicle Farm</option>
+            <option value="a highway traffic jam during commute">Highway Traffic Jam</option>
+            <option value="an active construction site with teams working">Active Construction Site</option>
+            <option value="a bustling downtown coffee shop">Bustling Coffee Shop</option>
+            <option value="a community garden with different plots">Community Garden</option>
+            <option value="inside a complicated board game being played">Complicated Board Game</option>
+            <option value="a workshop filled with tools and half-finished projects">Messy Workshop</option>
+            <option value="an airport security checkpoint line">Airport Security Line</option>
+            <option value="the backstage area during a school play">Backstage (School Play)</option>
+            <option value="an assembly line in a busy (but slightly inefficient) factory">Assembly Line</option>
+            <option value="a slightly disorganized shared camping site">Shared Camping Site</option>
+            <option value="a crowded subway train at rush hour">Crowded Subway Train</option>
+            <option value="a bustling, slightly chaotic flea market">Bustling Flea Market</option>
+            <option value="a thriving, colorful coral reef ecosystem">Coral Reef Ecosystem</option>
+            <option value="a dense, bioluminescent jungle at night">Bioluminescent Jungle</option>
+            <option value="a city constructed entirely from clouds">City Made of Clouds</option>
+            <option value="a surreal landscape of melting clocks">Melting Clocks Landscape</option>
+            <option value="an alchemist's cluttered laboratory filled with bubbling potions">Alchemist's Laboratory</option>
+            <option value="a cyberpunk city street during a neon rainstorm">Cyberpunk Street (Rainy)</option>
+            <option value="inside a glitching virtual reality simulation">Glitching VR Simulation</option>
+            <option value="an interdimensional crossroads station with bizarre travelers">Interdimensional Crossroads</option>
+            <option value="a silent film movie set where everything is exaggerated">Silent Film Set</option>
+            <option value="inside a giant, overly complex cuckoo clock">Giant Cuckoo Clock</option>
+            <option value="a forgotten attic filled with peculiar antiques">Forgotten Attic</option>
+            <option value="custom">Other (Specify Below)</option>
+        </select>
+        <input type="text" id="setting-custom-input" class="custom-input" placeholder="Enter custom setting..." hidden>
+    </div>
+
+    <!-- Maturity Slider -->
+    <div class="control-group slider-group">
+        <label for="maturity-slider">Maturity Level:</label>
+        <input type="range" id="maturity-slider" min="0" max="10" value="3" step="1">
+        <span id="maturity-value" class="slider-value">Level 3: Mildly Edgy</span>
+    </div>
+
+    <!-- Insanity Slider -->
+    <div class="control-group slider-group">
+        <label for="insanity-slider">Insanity Level:</label>
+        <input type="range" id="insanity-slider" min="0" max="10" value="2" step="1">
+        <span id="insanity-value" class="slider-value">Level 2: Quirky</span>
+    </div>
+
+  </fieldset>
+  <!-- End Customization Section -->
 
 
-        <!-- Results Area -->
-        <div id="results-container" hidden>
-            <h2>The Cat Explanation</h2>
-            <div id="cards-container" class="cards-grid">
-                <!-- Generated cards will be appended here -->
-            </div>
+  <div id="output"></div> <!-- User prompt display area -->
+  <div id="error" hidden></div> <!-- Error message area -->
+  <div id="slideshow" hidden></div> <!-- Generated content area -->
 
-            <div class="download-controls">
-                <label for="grid-size">Download as grid:</label>
-                <select id="grid-size">
-                    <option value="2">2x2</option>
-                    <option value="3">3x3</option>
-                    <option value="4" selected>4x4</option>
-                    <option value="5">5x5</option>
-                </select>
-                <button id="download-grid-btn" class="secondary-btn" disabled>Download Grid</button>
-            </div>
-        </div>
+  <!-- Download controls section -->
+  <div id="download-controls" hidden>
+      <p id="download-info" class="info-text" hidden>
+          The 'Download Grid' button will appear here once the explanation is fully generated.
+      </p>
+      <label for="grid-size">Grid size:</label>
+      <select id="grid-size">
+        <option value="2">2x2</option>
+        <option value="3" selected>3x3</option>
+        <option value="4">4x4</option>
+        <option value="5">5x5</option>
+      </select>
+      <button id="download-grid-btn" class="download-button">Download Grid</button>
+  </div>
 
-    </div><!-- /app-container -->
+</div>
 
-    <!-- Main script -->
-    <script src="index.tsx" type="module"></script>
+<!-- IMPORTANT: Ensure this points to your COMPILED JavaScript file if using TSX -->
+<script src="script.js" type="module"></script>
 
-    <!--
-    REMINDER: For process.env.API_KEY to work with Vite:
-    1. Create a file named `.env` in the root of your project.
-    2. Add the following line (NO 'VITE_' prefix):
-       API_KEY=YOUR_ACTUAL_GOOGLE_AI_API_KEY
-    3. Create/edit `vite.config.js` or `vite.config.ts` and add the `define` configuration:
-       define: { 'process.env.API_KEY': JSON.stringify(process.env.API_KEY) } // Or use loadEnv
-    4. Ensure `.env` is in `.gitignore`.
-    5. Restart your Vite dev server.
-    -->
 </body>
 </html><link rel="stylesheet" href="index.css">
 <script src="index.tsx" type="module"></script>

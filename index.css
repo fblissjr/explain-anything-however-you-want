@@ -1,21 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Indie+Flower&display=swap');
+/* index.css */
 
+/* Import Indie Flower specifically for captions/canvas */
+@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+
+/* --- Base Styles & Variables --- */
 :root {
-  --bg-dark: #1c1e26;
-  --bg-darker: #15171e;
-  --bg-panel: #25272e;
-  --text-light: #e5e7eb;
-  --text-dim: #9ca3af;
-  --primary: #4f78ef;
-  --primary-hover: #6f9aff;
-  --primary-light: rgba(79, 120, 239, 0.15);
-  --danger: #f87171;
-  --danger-light: rgba(248, 113, 113, 0.1);
-  --danger-border: #ef4444;
-  --border-color: #383a42;
-  --card-bg: #25272e;
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --radius: 8px;
+  /* Dark Theme with Teal Accent */
+  --bg-color: #1a202c;          /* Very dark grey-blue */
+  --panel-bg-color: #2d3748;     /* Dark grey-blue panel */
+  --panel-light-bg-color: #4a5568; /* Lighter grey for input/select bg */
+  --text-color: #e2e8f0;          /* Light grey text */
+  --text-medium-color: #a0aec0;     /* Medium grey for labels/secondary */
+  --text-dark-color: #718096;       /* Darker grey for subdued text */
+  --accent-color: #38b2ac;         /* Teal */
+  --accent-darker-color: #319795;  /* Darker Teal */
+  --border-color: #4a5568;         /* Panel Light BG as border */
+  --focus-ring-color: rgba(56, 178, 172, 0.3); /* Teal focus ring */
+
+  --error-bg-color: #2d2323; /* Dark red background */
+  --error-border-color: #e53e3e; /* Red */
+  --error-text-color: #feb2b2; /* Light red */
+
+  --border-radius: 6px;
+  --box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+  --box-shadow-hover: 0 5px 12px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -25,431 +33,354 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--bg-dark);
-  color: var(--text-light);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  padding: 25px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   line-height: 1.6;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
+  max-width: 1200px;
+  margin: 20px auto;
 }
 
-.app-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
+.container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-}
-
-header {
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 1rem;
+  gap: 20px;
 }
 
 h1 {
-  font-size: clamp(1.8rem, 5vw, 2.2rem);
-  font-weight: 700;
+  margin-bottom: 25px;
+  color: var(--text-color);
   text-align: center;
-  color: var(--text-light);
+  font-weight: 500;
+  font-size: 2.3em;
+  letter-spacing: 0.5px;
 }
 
-h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: var(--text-light);
+p {
+    margin-bottom: 8px;
+    color: var(--text-medium-color);
 }
 
-.main-content {
-  display: grid;
-  grid-template-columns: 1fr 2.5fr;
-  gap: 1.5rem;
+/* --- Example List --- */
+#examples {
+  list-style: none;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 15px;
 }
 
-@media (max-width: 800px) {
-  .main-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Examples panel */
-.examples-panel {
-  background: var(--bg-panel);
-  border-radius: var(--radius);
-  padding: 1.5rem;
+#examples li {
+  margin-bottom: 10px;
+  padding: 15px 20px;
   border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: var(--panel-bg-color);
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--box-shadow);
 }
 
-.examples-list {
+#examples li:hover {
+  background-color: var(--panel-light-bg-color);
+  border-color: var(--accent-color);
+  box-shadow: var(--box-shadow-hover);
+}
+#examples li.loading-examples,
+#examples li.error-examples {
+    color: var(--text-dark-color);
+    font-style: italic;
+    cursor: default;
+}
+
+/* --- Input Textarea --- */
+textarea#input {
+  width: 100%;
+  padding: 15px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  min-height: 100px;
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: var(--panel-light-bg-color);
+  color: var(--text-color);
+  font-size: 1em;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+textarea#input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+
+/* --- Customization Controls --- */
+.customization-controls {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 20px 25px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    background-color: var(--panel-bg-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    box-shadow: var(--box-shadow);
+}
+
+.customization-controls legend {
+    font-weight: 600;
+    padding: 0 10px;
+    margin-left: -5px;
+    color: var(--text-color);
+    font-size: 1.15em;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+    min-width: 210px;
+}
+
+.control-group label {
+    font-size: 0.9em;
+    color: var(--text-medium-color);
+    font-weight: 500;
+}
+
+/* Input, Select, Custom Input Styling */
+.control-group input[type="text"],
+.control-group select,
+.control-group input.custom-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    background-color: var(--panel-light-bg-color);
+    color: var(--text-color);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.95em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.control-group input[type="text"]:focus,
+.control-group select:focus,
+.control-group input.custom-input:focus {
+     outline: none;
+     border-color: var(--accent-color);
+     box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+
+/* Style for the hidden custom input */
+.control-group input.custom-input[hidden] {
+    display: none;
+}
+/* Add margin when custom input is shown */
+.control-group select:has(+ input.custom-input:not([hidden])) {
+    margin-bottom: 5px;
+}
+
+
+/* --- Slider Styles --- */
+.control-group input[type="range"] {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    appearance: none;
+    background: var(--text-dark-color);
+    border-radius: 3px;
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+/* Thumb Styles */
+.control-group input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.control-group input[type="range"]::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.control-group input[type="range"]:focus::-webkit-slider-thumb {
+     box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+.control-group input[type="range"]:focus::-moz-range-thumb {
+      box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
+
+/* Slider value display */
+.slider-value {
+    font-size: 0.85em;
+    color: var(--text-medium-color);
+    text-align: right;
+    margin-top: -5px;
+    min-height: 1em;
+}
+
+
+/* --- User Prompt Display --- */
+.user-turn {
+  font-weight: 500;
+  padding: 15px 20px;
+  background-color: #2b4863; /* Darker blue background */
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--accent-color);
+  margin-bottom: 15px;
+  color: #cbeef3; /* Lighter teal text */
+  box-shadow: var(--box-shadow);
+}
+.user-turn strong {
+    color: var(--text-color);
+}
+
+/* --- Slideshow & Slides (UPDATED for Grid Layout) --- */
+#slideshow {
+  display: grid; /* Use Grid layout */
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); /* Create responsive columns */
+  gap: 25px; /* Keep the gap between items */
+  margin-bottom: 25px;
+  padding: 20px 15px; /* Adjust padding slightly if needed */
+  border: none;
+  border-radius: var(--border-radius);
+  background-color: #222b3a;
+
+  &[hidden] { display: none; }
+}
+
+.slide {
+  border: 1px solid var(--border-color);
+  padding: 30px;
+  font-family: "Indie Flower", cursive;
+  /* remove scroll-snap-align as it's not needed for grid */
+  background-color: var(--panel-bg-color);
+  border-radius: var(--border-radius);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.example-btn {
-  background: var(--bg-darker);
-  color: var(--text-light);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.example-btn:hover {
-  background: var(--primary-light);
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-/* Prompt panel */
-.prompt-panel {
-  background: var(--bg-panel);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  border: 1px solid var(--border-color);
-}
-
-#prompt-input {
-  width: 100%;
-  min-height: 120px;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  background: var(--bg-darker);
-  color: var(--text-light);
-  font-family: inherit;
-  font-size: 1rem;
-  resize: vertical;
-  margin-bottom: 1rem;
-}
-#prompt-input:disabled { /* Style when disabled (e.g., API key missing) */
-    background-color: var(--bg-dark);
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-#prompt-input::placeholder {
-  color: var(--text-dim);
-}
-
-#prompt-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79, 120, 239, 0.2);
-}
-
-.input-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
   align-items: center;
+  /* min-width is handled by grid-template-columns now */
+  box-shadow: var(--box-shadow-hover);
+  transition: transform 0.2s;
+  color: var(--text-color);
+  /* Add min-height if you want empty grid cells to still have some height */
+   min-height: 500px; /* Example minimum height */
 }
 
-#add-image-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
+.slide div { /* Caption */
+  font-size: 26px;
+  text-align: center;
+  text-wrap: balance;
+  margin-top: 25px;
+  width: 100%; /* Ensure caption takes full width */
+}
+
+.slide img {
+  height: 350px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+/* Style for text-only slides added at the end */
+.slide.text-only-slide {
+    justify-content: center;
+     min-height: 500px; /* Match min-height if set */
+}
+
+/* --- Error Message --- */
+#error {
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 15px 20px;
+  background-color: var(--error-bg-color);
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--error-border-color);
+  margin-top: 15px;
+  color: var(--error-text-color);
 }
-#add-image-btn .icon {
-    margin-right: 0.25rem;
-}
-#add-image-btn:hover {
-  background: var(--primary-light);
+#error:not([hidden]) {
+  margin-bottom: 15px;
 }
 
-.primary-btn {
-  padding: 0.75rem 1.5rem;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
+/* --- Download Controls --- */
+#download-controls {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: var(--panel-bg-color);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  box-shadow: var(--box-shadow);
+}
+
+#download-controls .info-text {
+    font-size: 0.9em;
+    color: var(--text-medium-color);
+    margin-right: auto;
+    padding-right: 10px;
+}
+ #download-controls .info-text[hidden] { display: none; }
+
+
+#download-controls label {
+  font-weight: 500;
   margin-left: auto;
+   color: var(--text-medium-color);
+   font-size: 0.95em;
 }
 
-.primary-btn:hover:not(:disabled) { /* Don't change hover if disabled */
-  background: var(--primary-hover);
+#download-controls select,
+#download-controls button {
+  padding: 9px 14px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.95em;
+  cursor: pointer;
 }
 
+#download-controls select {
+  background-color: var(--panel-light-bg-color);
+  color: var(--text-color);
+}
 
-.primary-btn:disabled,
-.secondary-btn:disabled {
+#download-controls button.download-button {
+  background-color: var(--accent-color);
+  color: #1a202c; /* Dark text on accent */
+  border-color: var(--accent-color);
+  transition: background-color 0.2s ease;
+  font-weight: 600;
+}
+
+#download-controls button.download-button:hover {
+  background-color: var(--accent-darker-color);
+  border-color: var(--accent-darker-color);
+}
+
+#download-controls button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  /* Keep background consistent or grey out */
-  background-color: var(--text-dim);
-   border-color: transparent; /* Adjust border for primary */
-  color: var(--bg-darker);
-}
-.secondary-btn:disabled {
-    background: transparent; /* Keep secondary bg transparent when disabled */
-    border-color: var(--text-dim);
+  background-color: var(--text-dark-color);
+  border-color: var(--text-dark-color);
+  color: var(--bg-color);
 }
 
-.secondary-btn:disabled:hover {
-   background: transparent;
-   color: var(--text-dim);
-}
-
-.secondary-btn {
-  padding: 0.5rem 1rem;
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.secondary-btn:hover {
-  background: var(--primary-light);
-}
-
-/* Image preview */
-#image-preview-container {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-
-#image-preview {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.remove-image-btn {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  border: none;
-  color: white;
-  font-size: 11px;
-  line-height: 18px;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s;
-  padding: 0;
-}
-
-.remove-image-btn:hover {
-  background: rgba(200, 0, 0, 0.7);
-}
-
-/* User query Display */
-.user-query-display {
-  background: var(--primary-light);
-  color: var(--text-light);
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius);
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--primary);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.user-query-display img {
-  max-width: 80px;
-  max-height: 80px;
-  margin-left: 1rem;
-  vertical-align: middle;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-}
-
-/* Error container */
-.error-display {
-  background: var(--danger-light);
-  color: var(--danger);
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius);
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid var(--danger-border);
-}
-
-/* Results container */
-#results-container {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-}
-#results-container h2 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-}
-
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.card {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-  animation: fadeIn 0.5s ease-out forwards;
-  opacity: 0;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
-  border-color: var(--primary);
-}
-
-.card-image {
-  width: 100%;
-  height: 240px;
-  object-fit: contain;
-  background: white;
-  display: block;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.card-content {
-  padding: 1.25rem;
-  font-family: 'Indie Flower', cursive;
-  font-size: 1.15rem;
-  line-height: 1.5;
-  color: var(--text-light);
-  min-height: 100px;
-}
-.card-content p {
-  margin-bottom: 0.5em;
-}
-.card-content strong {
-    color: var(--primary);
-}
-
-/* Download controls */
-.download-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  background: var(--bg-panel);
-  padding: 1rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-color);
-}
-
-#grid-size {
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius);
-  background: var(--bg-darker);
-  color: var(--text-light);
-  border: 1px solid var(--border-color);
-  font-size: 0.9rem;
-}
-#grid-size:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
-/* Loading indicator Area */
-.loading-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem; /* Adjusted gap */
-  padding: 2rem;
-  margin: 2rem auto;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  max-width: 400px;
-  text-align: center;
-}
-/* Spinner styling matching original CSS if needed */
-/* Ensure spinner animation uses standard keyframes */
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--primary-light); /* Lighter base border */
-  border-radius: 50%;
-  border-top-color: var(--primary); /* Colored spinning part */
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Cancel Button Style */
-.cancel-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1.2rem;
-  background-color: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger-border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.cancel-btn:hover {
-  background-color: var(--danger-light);
-  color: white;
-  border-color: var(--danger);
-}
-
-
-/* Fade-in Animation for Cards */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-/* Optional staggered delay */
-.card:nth-child(2) { animation-delay: 0.05s; }
-.card:nth-child(3) { animation-delay: 0.1s; }
-.card:nth-child(4) { animation-delay: 0.15s; }
+#download-controls[hidden] { display: none; }

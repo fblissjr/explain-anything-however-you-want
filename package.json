@@ -1,5 +1,5 @@
 {
-  "name": "comic-panel---explain-things-with-lots-of-tiny-cats",
+  "name": "explain-things-however-you-want",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^0.7.0",
-    "marked": "^15.0.7",
-    "@google/generative-ai": "^0.24.0"
+    "marked": "^15.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
